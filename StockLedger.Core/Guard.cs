@@ -21,4 +21,7 @@ internal static class Guard
         
         return value;
     }
+
+    public static string Code(string? value, string paramName) => NotBlank(value, paramName).ToUpperInvariant();
+    
 }
