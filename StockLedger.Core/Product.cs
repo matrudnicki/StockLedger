@@ -15,7 +15,7 @@ public class Product
         Unit = unit;
         UnitWeightKg = Guard.Positive(unitWeightKg, nameof(unitWeightKg));
         ListPrice = listPrice;
-        TrackExpiry = tracksExpiry;
+        TracksExpiry = tracksExpiry;
         Valuation = valuation;
     }
 
@@ -57,7 +57,7 @@ public class Product
     }
     
     /// <summary>Czy towar ma datę ważności</summary>
-    public bool TrackExpiry { get; }
+    public bool TracksExpiry { get; }
     
     
     /// <summary>Metoda wyceny wartości towaru </summary>
