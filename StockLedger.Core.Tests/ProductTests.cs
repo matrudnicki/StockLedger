@@ -17,7 +17,7 @@ public class ProductTests
     {
         var product = CreateProduct();
         Assert.Equal(ValuationType.Fifo, product.Valuation);
-        Assert.False(product.TrackExpiry);
+        Assert.False(product.TracksExpiry);
     }
 
     [Fact]
