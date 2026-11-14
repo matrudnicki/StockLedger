@@ -100,7 +100,10 @@ public class Stock
         {
             throw new InsufficientStockException(product, quantity, available);
         }
-
+        
+        var productLots = _lots.Where(l => l.Product.Sku == product.Sku && !l.IsEmpty).ToList();
+        ValuationMethods.For(product.Valuation).PrepareForIssue(productLots);
+        
         var parts = new List<IssuedPart>();
         var left = quantity;
 

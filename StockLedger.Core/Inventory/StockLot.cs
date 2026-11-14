@@ -100,4 +100,13 @@ public class StockLot
 
     /// <inheritdoc />
     public override string ToString() => $"{Number} {Product.Sku} {RemainingQuantity} @ {Location.FullCode}";
+
+    internal void Revalue(Money newRemainingValue)
+    {
+        if (newRemainingValue < Money.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(newRemainingValue), "Wartość partii nie może być ujemna");
+        }
+        RemainingValue = newRemainingValue;
+    }
 }
