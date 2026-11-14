@@ -250,4 +250,80 @@ public class StockTests
 
         Assert.Throws<InsufficientStockException>(() => stock.Issue(milk, Kg(1m), Today));
     }
+    private static Product CreateAveraged() =>
+    new("MALT", "Słód", Unit.Kilogram, 1m, new Money(4m), valuation: ValuationType.WeightedAverage);
+
+    [Fact]
+    public void Issue_WeightedAverage_UsesAverageCost()
+    {
+        var stock = new Stock();
+        var malt = CreateAveraged();
+        var location = CreateLocation();
+        stock.Receive(malt, location, Kg(10m), new Money(40m), Today.AddDays(-2));   // 4 zł/kg
+        stock.Receive(malt, location, Kg(10m), new Money(60m), Today.AddDays(-1));   // 6 zł/kg
+
+        var result = stock.Issue(malt, Kg(5m), Today);
+
+        // Średnia to 5 zł/kg, więc 5 kg kosztuje 25 zł (FIFO dałoby 20 zł).
+        Assert.Equal(new Money(25m), result.TotalCost);
+    }
+
+    [Fact]
+    public void Issue_WeightedAverage_KeepsTotalValueConsistent()
+    {
+        var stock = new Stock();
+        var malt = CreateAveraged();
+        var location = CreateLocation();
+        stock.Receive(malt, location, Kg(10m), new Money(40m), Today.AddDays(-2));
+        stock.Receive(malt, location, Kg(10m), new Money(60m), Today.AddDays(-1));
+
+        stock.Issue(malt, Kg(5m), Today);
+
+        Assert.Equal(Kg(15m), stock.GetQuantity(malt));
+        Assert.Equal(new Money(75m), stock.GetValue(malt));   // 100 zł - 25 zł
+    }
+
+    [Fact]
+    public void Issue_WeightedAverage_IssuingEverythingCostsExactlyTotalValue()
+    {
+        var stock = new Stock();
+        var malt = CreateAveraged();
+        var location = CreateLocation();
+        stock.Receive(malt, location, Kg(3m), new Money(10.00m), Today.AddDays(-3));
+        stock.Receive(malt, location, Kg(3m), new Money(10.00m), Today.AddDays(-2));
+        stock.Receive(malt, location, Kg(3m), new Money(10.01m), Today.AddDays(-1));
+
+        var result = stock.Issue(malt, Kg(9m), Today);
+
+        Assert.Equal(new Money(30.01m), result.TotalCost);   // ani grosza w tę ani w tamtą
+        Assert.Empty(stock.Lots);
+    }
+
+    [Fact]
+    public void Issue_Fifo_KeepsLotCosts()
+    {
+        var stock = new Stock();
+        var product = CreateProduct();
+        var location = CreateLocation();
+        var older = stock.Receive(product, location, Kg(10m), new Money(40m), Today.AddDays(-2));
+        var newer = stock.Receive(product, location, Kg(10m), new Money(60m), Today.AddDays(-1));
+
+        stock.Issue(product, Kg(5m), Today);
+
+        Assert.Equal(new Money(20m), older.RemainingValue);
+        Assert.Equal(new Money(60m), newer.RemainingValue);
+    }
+
+    [Fact]
+    public void ValuationMethods_For_ReturnsMethodOfRequestedType()
+    {
+        Assert.Equal(ValuationType.Fifo, ValuationMethods.For(ValuationType.Fifo).Type);
+        Assert.Equal(ValuationType.WeightedAverage, ValuationMethods.For(ValuationType.WeightedAverage).Type);
+    }
+
+    [Fact]
+    public void ValuationMethods_For_UnknownType_Throws()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => ValuationMethods.For((ValuationType)99));
+    }
 }
