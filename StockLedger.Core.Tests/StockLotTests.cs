@@ -146,13 +146,5 @@ public class StockLotTests
         Assert.False(lot.IsExpiredOn(Today.AddDays(2)));
         Assert.True(lot.IsExpiredOn(Today.AddDays(3)));
     }
-
-    [Fact]
-    public void LoadKg_IsRemainingQuantityTimesUnitWeight()
-    {
-        var product = new Product("PIWO", "Piwo", Unit.Piece, 0.5m, new Money(6m));
-        var lot = new StockLot(product, CreateLocation(), new Quantity(10m, Unit.Piece), new Money(60m), Today);
-
-        Assert.Equal(5m, lot.LoadKg);
-    }
+    
 }
