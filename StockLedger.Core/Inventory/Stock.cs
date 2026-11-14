@@ -72,4 +72,66 @@ public class Stock
     /// </summary>
     public decimal GetLoadKg(Location location) => _lots.Where(candidate => candidate.Location == location).Sum(candidate => candidate.LoadKg);
 
+    
+    /// <summary>
+    /// Wydaje towar z magazynu. Zwykłe produkty FIFO, produkty z terminem ważności FEFO.
+    /// Partie przeterminowane na dzień wydania są pomijane.
+    /// </summary>
+    /// <exception cref="InsufficientStockException">Brak wystarczającej ilości towaru.</exception>
+    public IssueResult Issue(Product product, Quantity quantity, DateOnly issueDate)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
+        if (quantity.Value <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(quantity), "Wydawana ilość musi być dodatnia.");
+        }
+
+        var candidates = PickingOrder(product, issueDate).ToList();
+
+        // Najpierw sprawdzamy, potem zmieniamy: przy braku towaru stan zostaje nietknięty.
+        var available = Quantity.Zero(product.Unit);
+        foreach (var lot in candidates)
+        {
+            available += lot.RemainingQuantity;
+        }
+
+        if (available < quantity)
+        {
+            throw new InsufficientStockException(product, quantity, available);
+        }
+
+        var parts = new List<IssuedPart>();
+        var left = quantity;
+
+        foreach (var lot in candidates)
+        {
+            if (left.Value == 0)
+            {
+                break;
+            }
+
+            var take = lot.RemainingQuantity <= left ? lot.RemainingQuantity : left;
+            var cost = lot.Take(take);
+
+            parts.Add(new IssuedPart(lot, take, cost));
+            left -= take;
+        }
+
+        _lots.RemoveAll(l => l.IsEmpty);
+
+        return new IssueResult(product, parts);
+    }
+
+    /// <summary>Partie danego produktu w kolejności, w jakiej mają być wydawane.</summary>
+    private IEnumerable<StockLot> PickingOrder(Product product, DateOnly issueDate)
+    {
+        var lots = _lots.Where(l => l.Product.Sku == product.Sku
+                                    && !l.IsEmpty
+                                    && !l.IsExpiredOn(issueDate));
+
+        return product.TracksExpiry
+            ? lots.OrderBy(l => l.ExpiryDate ?? DateOnly.MaxValue).ThenBy(l => l.ReceivedOn)
+            : lots.OrderBy(l => l.ReceivedOn);
+    }
 }
