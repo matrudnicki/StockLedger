@@ -45,39 +45,39 @@ public class Stock
     }
 
     
-    /// <summary>
-    /// Łączna ilość towaru we wszystkich partiach
-    /// </summary>
+      /// <summary>Łączna ilość towaru we wszystkich partiach</summary>
     public Quantity GetQuantity(Product product)
     {
         var total = Quantity.Zero(product.Unit);
-        foreach (var lot in _lots.Where(candidate => candidate.Product.Sku == product.Sku))
+        foreach (var lot in LotsOf(product))
         {
             total += lot.RemainingQuantity;
         }
         return total;
     }
 
-    
-    /// <summary>
-    /// Łączna wartość we wszystkich partiach
-    /// </summary>
-    public Money GetValue(Product product) => Money.Sum(_lots
-        .Where(candidate => candidate.Product.Sku == product.Sku)
-        .Select(candidate => candidate.RemainingValue));
+    /// <summary>Łączna wartość towaru we wszystkich partiach</summary>
+    public Money GetValue(Product product)
+    {
+        var total = Money.Zero;
+        foreach (var lot in LotsOf(product))
+        {
+            total += lot.RemainingValue;
+        }
+        return total;
+    }
 
-    
-    /// <summary>
-    /// Obecne obciążenie lokalizacji
-    /// </summary>
-    public decimal GetLoadKg(Location location) => _lots.Where(candidate => candidate.Location == location).Sum(candidate => candidate.LoadKg);
+    /// <summary>Obecne obciążenie lokalizacji w kg</summary>
+    public decimal GetLoadKg(Location location)
+    {
+        return _lots.Where(lot => lot.Location == location).Sum(lot => lot.LoadKg);
+    }
 
-    
     /// <summary>
     /// Wydaje towar z magazynu. Zwykłe produkty FIFO, produkty z terminem ważności FEFO.
     /// Partie przeterminowane na dzień wydania są pomijane.
     /// </summary>
-    /// <exception cref="InsufficientStockException">Brak wystarczającej ilości towaru.</exception>
+    /// <exception cref="InsufficientStockException">Brak wystarczającej ilości towaru</exception>
     public IssueResult Issue(Product product, Quantity quantity, DateOnly issueDate)
     {
         ArgumentNullException.ThrowIfNull(product);
@@ -87,25 +87,65 @@ public class Stock
             throw new ArgumentOutOfRangeException(nameof(quantity), "Wydawana ilość musi być dodatnia.");
         }
 
-        var candidates = PickingOrder(product, issueDate).ToList();
+        var candidates = GetPickingOrder(product, issueDate);
 
         // Najpierw sprawdzamy, potem zmieniamy: przy braku towaru stan zostaje nietknięty.
+        CheckAvailable(product, quantity, candidates);
+
+        // Metoda wyceny produktu ustawia koszty partii przed wydaniem.
+        ValuationMethods.For(product.Valuation).PrepareForIssue(LotsOf(product));
+
+        var parts = TakeFromLots(quantity, candidates);
+        _lots.RemoveAll(lot => lot.IsEmpty);
+
+        return new IssueResult(product, parts);
+    }
+
+    /// <summary>Niepuste partie danego produktu</summary>
+    private List<StockLot> LotsOf(Product product)
+    {
+        return _lots.Where(lot => lot.Product.Sku == product.Sku && !lot.IsEmpty).ToList();
+    }
+
+    /// <summary>
+    /// Partie do wydania w kolejności: FEFO dla towarów z terminem ważności, FIFO dla pozostałych.
+    /// Przeterminowane są pomijane.
+    /// </summary>
+    private List<StockLot> GetPickingOrder(Product product, DateOnly issueDate)
+    {
+        var usable = LotsOf(product).Where(lot => !lot.IsExpiredOn(issueDate));
+
+        if (product.TracksExpiry)
+        {
+            // Partia bez terminu (nie powinna się zdarzyć) trafia na koniec kolejki.
+            return usable.OrderBy(lot => lot.ExpiryDate ?? DateOnly.MaxValue)
+                .ThenBy(lot => lot.ReceivedOn)
+                .ToList();
+        }
+
+        return usable.OrderBy(lot => lot.ReceivedOn).ToList();
+    }
+
+    /// <summary>Rzuca wyjątek, jeśli w podanych partiach jest mniej towaru niż żądano</summary>
+    private static void CheckAvailable(Product product, Quantity requested, List<StockLot> candidates)
+    {
         var available = Quantity.Zero(product.Unit);
         foreach (var lot in candidates)
         {
             available += lot.RemainingQuantity;
         }
 
-        if (available < quantity)
+        if (available < requested)
         {
-            throw new InsufficientStockException(product, quantity, available);
+            throw new InsufficientStockException(product, requested, available);
         }
-        
-        var productLots = _lots.Where(l => l.Product.Sku == product.Sku && !l.IsEmpty).ToList();
-        ValuationMethods.For(product.Valuation).PrepareForIssue(productLots);
-        
+    }
+
+    /// <summary>Zdejmuje żądaną ilość z kolejnych partii i zwraca listę fragmentów wydania</summary>
+    private static List<IssuedPart> TakeFromLots(Quantity requested, List<StockLot> candidates)
+    {
         var parts = new List<IssuedPart>();
-        var left = quantity;
+        var left = requested;
 
         foreach (var lot in candidates)
         {
@@ -113,28 +153,17 @@ public class Stock
             {
                 break;
             }
+            var take = left;
+            if (lot.RemainingQuantity < left)
+            {
+                take = lot.RemainingQuantity;
+            }
 
-            var take = lot.RemainingQuantity <= left ? lot.RemainingQuantity : left;
             var cost = lot.Take(take);
-
             parts.Add(new IssuedPart(lot, take, cost));
             left -= take;
         }
 
-        _lots.RemoveAll(l => l.IsEmpty);
-
-        return new IssueResult(product, parts);
-    }
-
-    /// <summary>Partie danego produktu w kolejności, w jakiej mają być wydawane.</summary>
-    private IEnumerable<StockLot> PickingOrder(Product product, DateOnly issueDate)
-    {
-        var lots = _lots.Where(l => l.Product.Sku == product.Sku
-                                    && !l.IsEmpty
-                                    && !l.IsExpiredOn(issueDate));
-
-        return product.TracksExpiry
-            ? lots.OrderBy(l => l.ExpiryDate ?? DateOnly.MaxValue).ThenBy(l => l.ReceivedOn)
-            : lots.OrderBy(l => l.ReceivedOn);
+        return parts;
     }
 }

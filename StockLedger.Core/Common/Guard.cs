@@ -6,7 +6,7 @@ internal static class Guard
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException("Value cannot be empty", paramName);
+            throw new ArgumentException("Wartość nie może być pusta.", paramName);
         }
 
         return value.Trim();
@@ -16,7 +16,7 @@ internal static class Guard
     {
         if (value <= 0)
         {
-            throw new ArgumentOutOfRangeException(paramName, value, "Value must be greater than zero");
+            throw new ArgumentOutOfRangeException(paramName, value, "Wartość musi być większa od zera.");
         }
         
         return value;

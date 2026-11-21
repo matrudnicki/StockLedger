@@ -24,6 +24,7 @@ internal sealed class WeightedAverageValuation : IValuationMethod
             lots[i].Revalue(share);
             assigned += share;
         }
-        lots[^1].Revalue(totalValue - assigned);
+        var lastlot = lots[lots.Count - 1];
+        lastlot.Revalue(totalValue - assigned);
     }
 }

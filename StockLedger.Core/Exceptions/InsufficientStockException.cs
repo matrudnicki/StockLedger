@@ -14,7 +14,7 @@ public class InsufficientStockException : DomainException
     /// <param name="quantity">Żądana ilość</param>
     /// <param name="available">Dostępna ilość</param>
     public InsufficientStockException(Product product, Quantity quantity, Quantity available) : base(
-        $"Insufficient stock of the {product.Sku}: Requested {quantity}, available {available}.")
+        $"Za mało towaru {product.Sku}: żądano {quantity}, dostępne {available}.")
     {
         Product = product;
         Requested = quantity;

@@ -5,7 +5,7 @@
 public class Product
 {
     private string _name =  string.Empty;
-    private Money _listprice;
+    private Money _listPrice;
 
     public Product(string sku, string name, Unit unit, decimal unitWeightKg, Money listPrice, bool tracksExpiry = false,
         ValuationType valuation = ValuationType.Fifo)
@@ -44,15 +44,15 @@ public class Product
     /// <exception cref="ArgumentOutOfRangeException">Gdy cena jest ujemna</exception>
     public Money ListPrice
     {
-        get => _listprice;
+        get => _listPrice;
         set
         {
             if (value < Money.Zero)
             {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Price cannot be less than zero.");
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Cena nie może być ujemna.");
             }
             
-            _listprice = value;
+            _listPrice = value;
         }
     }
     

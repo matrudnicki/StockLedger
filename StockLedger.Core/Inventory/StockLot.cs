@@ -22,20 +22,21 @@ public class StockLot
 
         if (totalValue < Money.Zero)
         {
-            throw new ArgumentOutOfRangeException(nameof(totalValue), totalValue, "Number of the party cannot be negative.");
+            throw new ArgumentOutOfRangeException(nameof(totalValue), totalValue, "Wartość partii nie może być ujemna.");
         }
 
         if (product.TracksExpiry && expiryDate is null)
         {
-            throw new DomainException($"Product {product.Sku} requries expiry date.");
+            throw new DomainException($"Towar {product.Sku} wymaga daty ważności.");
         }
 
         if (expiryDate is not null && expiryDate < receivedOn)
         {
-            throw new ArgumentException("Expiry date cannot be before the received date.", nameof(expiryDate));
+            throw new ArgumentException("Data ważności nie może być wcześniejsza niż data przyjęcia.", nameof(expiryDate));
         }
 
-        Number = $"L-{Interlocked.Increment(ref _lastNumber):D6}";
+        _lastNumber++;
+        Number = $"L-{_lastNumber:D6}";
         Product = product;
         Location = location;
         RemainingQuantity = quantity;

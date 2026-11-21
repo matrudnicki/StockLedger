@@ -5,10 +5,18 @@
 /// </summary>
 public static class ValuationMethods
 {
-    public static IValuationMethod For(ValuationType type) => type switch
+    public static IValuationMethod For(ValuationType type)
     {
-        ValuationType.Fifo => new FifoValuation(),
-        ValuationType.WeightedAverage => new WeightedAverageValuation(),
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Nieznana metoda wyceny")
-    };
+        if (type == ValuationType.Fifo)
+        {
+            return new FifoValuation();
+        }
+
+        if (type == ValuationType.WeightedAverage)
+        {
+            return new WeightedAverageValuation();
+        }
+
+        throw new ArgumentOutOfRangeException(nameof(type), type, "Nieznana metoda wyceny.");
+    }
 }

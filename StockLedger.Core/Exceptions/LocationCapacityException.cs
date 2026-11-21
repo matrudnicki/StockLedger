@@ -6,8 +6,8 @@ public class LocationCapacityException : DomainException
     /// Wyjątek przekroczenia pojemności
     /// </summary>
     public LocationCapacityException(Location location, decimal currentLoadKg, decimal additionalLoadKg) : base(
-        $"Location {location.FullCode} cannot hold additional {additionalLoadKg} kg" +
-        $"Current load {currentLoadKg} kg, capacity{location.MaxLoadKg}")
+        $"Lokalizacja {location.FullCode} nie pomieści dodatkowych {additionalLoadKg} kg. " +
+        $"Obecne obciążenie: {currentLoadKg} kg, udźwig: {location.MaxLoadKg} kg.")
     {
         Location = location;
         CurrentLoadKg = currentLoadKg;

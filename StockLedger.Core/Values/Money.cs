@@ -3,7 +3,7 @@
 using System.Globalization;
 
 ///<summary>
-///Kwota w złotych zaokrąglona do groszy. Typ jest nieznany.
+///Kwota w złotych zaokrąglona do groszy. Typ jest niezmienny.
 /// </summary>
 
 
@@ -74,7 +74,7 @@ public readonly struct Money : IEquatable<Money>, IComparable<Money>
     }
     
     ///<inheritdoc />
-    public override string ToString() => _amount.ToString(CultureInfo.InvariantCulture);
+    public override string ToString() => _amount.ToString("N2", CultureInfo.GetCultureInfo("pl-PL")) + " zł";
     
     
 }

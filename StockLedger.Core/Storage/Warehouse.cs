@@ -30,7 +30,19 @@ public class Warehouse
 
     
     /// <summary>Wszystkie lokalizacje ze wszysktkich stref </summary>
-    public IEnumerable<Location> Locations => _zones.SelectMany(zone => zone.Locations);
+    /// <summary>Wszystkie lokalizacje ze wszystkich stref</summary>
+    public IReadOnlyList<Location> Locations
+    {
+        get
+        {
+            var result = new List<Location>();
+            foreach (var zone in _zones)
+            {
+                result.AddRange(zone.Locations);
+            }
+            return result;
+        }
+    }
 
     
     /// <summary> Dodaje strefę magazynu</summary>

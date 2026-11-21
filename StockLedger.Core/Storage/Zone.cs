@@ -44,5 +44,5 @@ public class Zone
     }
 
     ///<inheritdoc />
-    public override string ToString() => $"{Warehouse.Code} {Name}";
+    public override string ToString() => $"{Warehouse.Code}/{Code}";
 }

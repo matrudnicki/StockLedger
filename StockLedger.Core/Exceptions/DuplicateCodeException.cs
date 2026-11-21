@@ -7,7 +7,7 @@ public class DuplicateCodeException : DomainException
     /// <param name="entityName">Nazwa rodzaju obiektu, np. "Strefa."</param>
     /// <param name="code">Zduplikowany kod.</param>
     public DuplicateCodeException(string entityName, string code) : 
-        base($"{entityName} with code {code} is already in use")
+        base($"{entityName} o kodzie {code} już istnieje.")
     {
         EntityName = entityName;
         Code = code;
