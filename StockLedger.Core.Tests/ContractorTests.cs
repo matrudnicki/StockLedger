@@ -31,5 +31,34 @@ public class ContractorTests
 
         Assert.False(result);
     }
-    
+
+    [Fact]
+    public void Constructor_ValidData_SetsProperties()
+    {
+        Contractor contractor = new Contractor("Hurtownia", ContractorType.Supplier, "123-456-32-18");
+        
+        Assert.Equal("Hurtownia", contractor.Name);
+        Assert.Equal(ContractorType.Supplier, contractor.Type);
+        Assert.Equal("1234563218", contractor.TaxId);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Constructor_BlankName_Throws(string name)
+    {
+        Assert.Throws<ArgumentException>(() => new Contractor(name, ContractorType.Supplier, "1234563218"));
+    }
+
+    [Fact]
+    public void Constructor_InvalidNip_Throws()
+    {
+        Assert.Throws<ArgumentException>(() => new Contractor("Sklep", ContractorType.Customer, "1234563219"));
+    }
+
+    [Fact]
+    public void Constructor_UnknownType_Throws()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new Contractor("Sklep", (ContractorType)0, "1234563218"));
+    }
 }
