@@ -7,9 +7,10 @@ public class Contractor
     /// <param name="name">Nazwa firmy, niepusta.</param>
     /// <param name="type">Dostawca albo odbiorca</param>
     /// <param name="taxId">NIP, obowiązkowy, z myślnikami albo bez.</param>
-    /// <exception cref="ArgumentException">Gdy nazwa jest pusta lub NIP jest niepoprawny.</exception>
+    /// <param name="email">Adres e-mail opcjonalny</param>
+    /// <exception cref="ArgumentException">Gdy nazwa jest pusta lub NIP jest niepoprawny albo e-mail ma zły format.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Gdy typ nie jest znaną wartością.</exception>
-    public Contractor(string name, ContractorType type, string taxId)
+    public Contractor(string name, ContractorType type, string taxId, string? email = null)
     {
         if (!Enum.IsDefined(type))
         {
@@ -20,10 +21,16 @@ public class Contractor
         {
             throw new ArgumentException("Invalid tax id (NIP).", nameof(taxId));
         }
+
+        if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
+        {
+            throw new ArgumentException("Invalid email address.", nameof(email));
+        }
         
         Name = Guard.NotBlank(name, nameof(name));
         Type = type;
         TaxId = NormalizeNip(taxId);
+        Email = string.IsNullOrWhiteSpace(email) ? null : email;
     }
     
     /// <summary>Nazwa firmy</summary>
@@ -35,8 +42,11 @@ public class Contractor
     /// <summary>NIP zapisany jako same cyfry, np 1234563218</summary>
     public string TaxId { get; }
     
+    /// <summary>Adres e-mail albo null, gdy nie podano.</summary>
+    public string? Email { get; }
+    
     /// <summary>Sprawdza, czy NIP jest poprawny: 10 cyfr i zgodna cyfra kontrolna.</summary>
-    /// <param name="nip">NIP do sprawdzenia, może zawierać myćlniki i spacje.</param>
+    /// <param name="nip">NIP do sprawdzenia, może zawierać myślniki i spacje.</param>
     /// <returns>true, gdy NIP jest poprawny, inaczej false.</returns>
     public static bool IsValidNip(string? nip)
     {
@@ -86,5 +96,25 @@ public class Contractor
         return sum % 11;
     }
 
+    private static bool IsValidEmail(string email)
+    {
+        if (email.Contains(' '))
+        {
+            return false;
+        }
+
+        int atIndex = email.IndexOf('@');
+
+        if (atIndex <= 0 || atIndex != email.LastIndexOf('@'))
+        {
+            return false;
+        }
+
+        int dotIndex = email.LastIndexOf('.');
+
+        return dotIndex > atIndex + 1 && dotIndex < email.Length - 1;
+
+    }
+    
     private static string NormalizeNip(string nip) => nip.Replace("-", "").Replace(" ", "");
 }

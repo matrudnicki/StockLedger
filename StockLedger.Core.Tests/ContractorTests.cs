@@ -61,4 +61,38 @@ public class ContractorTests
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new Contractor("Sklep", (ContractorType)0, "1234563218"));
     }
+
+    [Fact]
+    public void Constructor_ValidEmail_SetsEmail()
+    {
+        Contractor contractor = new Contractor("Skelp", ContractorType.Customer, "1234563218", "biuro@sklep.pl");
+        
+        Assert.Equal("biuro@sklep.pl", contractor.Email);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Constructor_NoEmail_EmailIsNull(string? email)
+    {
+        Contractor contractor = new Contractor("Sklep", ContractorType.Customer, "1234563218", email);
+        
+        Assert.Null(contractor.Email);
+    }
+
+    [Theory]
+    [InlineData("kot")]
+    [InlineData("biuro @sklep.pl")]
+    [InlineData("@sklep.pl")]
+    [InlineData("biuro@sklep")]
+    [InlineData("biuro@.pl")]
+    [InlineData("biuro@sklep.")]
+    [InlineData("biuro@@sklep.pl")]
+    public void Constructor_InvalidEmail_Throws(string email)
+    {
+        Assert.Throws<ArgumentException>(() => new Contractor("Sklep", ContractorType.Customer, "1234563218", email));
+    }
+    
+    
 }
