@@ -55,13 +55,7 @@ public class ContractorTests
     {
         Assert.Throws<ArgumentException>(() => new Contractor("Sklep", ContractorType.Customer, "1234563219"));
     }
-
-    [Fact]
-    public void Constructor_UnknownType_Throws()
-    {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new Contractor("Sklep", (ContractorType)0, "1234563218"));
-    }
-
+    
     [Fact]
     public void Constructor_ValidEmail_SetsEmail()
     {

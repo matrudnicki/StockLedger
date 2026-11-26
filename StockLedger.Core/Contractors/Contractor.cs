@@ -9,22 +9,16 @@ public class Contractor
     /// <param name="taxId">NIP, obowiązkowy, z myślnikami albo bez.</param>
     /// <param name="email">Adres e-mail opcjonalny</param>
     /// <exception cref="ArgumentException">Gdy nazwa jest pusta lub NIP jest niepoprawny albo e-mail ma zły format.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Gdy typ nie jest znaną wartością.</exception>
     public Contractor(string name, ContractorType type, string taxId, string? email = null)
     {
-        if (!Enum.IsDefined(type))
-        {
-            throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown contractor type.");
-        }
-
         if (!IsValidNip(taxId))
         {
-            throw new ArgumentException("Invalid tax id (NIP).", nameof(taxId));
+            throw new ArgumentException("Niepoprawny NIP.", nameof(taxId));
         }
 
         if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
         {
-            throw new ArgumentException("Invalid email address.", nameof(email));
+            throw new ArgumentException("Niepoprawny adres e-mail.", nameof(email));
         }
         
         Name = Guard.NotBlank(name, nameof(name));
@@ -73,7 +67,7 @@ public class Contractor
     {
         foreach (char c in text)
         {
-            if (c < '0' || c > '9')
+            if (!char.IsDigit(c))
             {
                 return false;
             }
